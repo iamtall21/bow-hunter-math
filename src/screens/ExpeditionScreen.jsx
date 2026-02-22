@@ -4,60 +4,91 @@ import { ANIMALS, AREAS } from '../data/gameData'
 import { generateQuestion, getTimerSeconds } from '../data/mathTemplates'
 import './ExpeditionScreen.css'
 
-const ENCOUNTER_STATES = ['scouting', 'encounter', 'answering', 'result']
+// Animal movement patterns
+function getAnimalPath(time, speed) {
+  // Animals wander in a natural-looking pattern using combined sine waves
+  const x = 35 + Math.sin(time * speed * 0.7) * 25 + Math.sin(time * speed * 1.3) * 8
+  const y = 30 + Math.sin(time * speed * 0.5 + 1) * 18 + Math.cos(time * speed * 0.9) * 6
+  return { x, y } // percentages of the hunting ground
+}
 
 export default function ExpeditionScreen() {
   const state = useGameStore()
   const area = AREAS.meadow
 
+  // Game flow
   const [phase, setPhase] = useState('scouting')
   const [currentAnimal, setCurrentAnimal] = useState(null)
   const [question, setQuestion] = useState(null)
   const [answer, setAnswer] = useState('')
+  const [showHint, setShowHint] = useState(false)
+  const [encounterCount, setEncounterCount] = useState(0)
+  const [questCompleted, setQuestCompleted] = useState([])
+
+  // Timer
   const [timeLeft, setTimeLeft] = useState(0)
   const [totalTime, setTotalTime] = useState(0)
-  const [result, setResult] = useState(null)
-  const [encounterCount, setEncounterCount] = useState(0)
-  const [showHint, setShowHint] = useState(false)
-  const [questCompleted, setQuestCompleted] = useState([])
   const timerRef = useRef(null)
+
+  // Aiming system
+  const [aimSteadiness, setAimSteadiness] = useState(0) // 0 = shaky, 1 = rock steady
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
+  const [animalPos, setAnimalPos] = useState({ x: 50, y: 40 })
+  const [crosshairPos, setCrosshairPos] = useState({ x: 50, y: 50 })
+  const [shotFired, setShotFired] = useState(false)
+  const [shotResult, setShotResult] = useState(null)
+  const [aimTime, setAimTime] = useState(0)
+  const [animalSpeed, setAnimalSpeed] = useState(0.5)
+  const [animalFacing, setAnimalFacing] = useState('right')
+
+  const huntingGroundRef = useRef(null)
+  const animFrameRef = useRef(null)
+  const aimStartTime = useRef(0)
   const inputRef = useRef(null)
 
   const maxEncounters = 5
 
+  // ---- START ENCOUNTER ----
   const startEncounter = useCallback(() => {
     if (state.inventory.arrow <= 0) {
       setPhase('no_arrows')
       return
     }
 
-    // Pick random animal from area
     const animalId = area.animals[Math.floor(Math.random() * area.animals.length)]
     const animal = ANIMALS[animalId]
     setCurrentAnimal({ id: animalId, ...animal })
 
-    // Generate math question based on difficulty tier
     const q = generateQuestion(state.difficultyTier)
     setQuestion(q)
     setAnswer('')
     setShowHint(false)
-    setResult(null)
+    setShotFired(false)
+    setShotResult(null)
+    setAimSteadiness(0)
+
+    // Animal speed varies by difficulty
+    setAnimalSpeed(0.3 + animal.difficulty * 0.2 + Math.random() * 0.2)
 
     const seconds = getTimerSeconds(state.difficulty)
     setTimeLeft(seconds)
     setTotalTime(seconds)
-    setPhase('encounter')
+    setPhase('math')
   }, [state.inventory.arrow, state.difficultyTier, state.difficulty, area.animals])
 
-  // Timer countdown
+  // ---- MATH TIMER ----
   useEffect(() => {
-    if (phase !== 'answering') return
+    if (phase !== 'math') return
+
+    if (inputRef.current) inputRef.current.focus()
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0.1) {
           clearInterval(timerRef.current)
-          handleTimeout()
+          // Time's up — shaky aim
+          setAimSteadiness(0.15)
+          setPhase('aiming')
           return 0
         }
         return Math.max(prev - 0.1, 0)
@@ -67,62 +98,149 @@ export default function ExpeditionScreen() {
     return () => clearInterval(timerRef.current)
   }, [phase])
 
-  // Focus input when answering
+  // ---- ANIMAL MOVEMENT (runs during math + aiming) ----
   useEffect(() => {
-    if (phase === 'answering' && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [phase])
-
-  const startAnswering = () => {
-    setPhase('answering')
-  }
-
-  const handleTimeout = () => {
-    clearInterval(timerRef.current)
-    // Time ran out — check if they typed a correct answer
-    const numAnswer = parseFloat(answer)
-    if (!isNaN(numAnswer) && Math.abs(numAnswer - question.answer) < 0.01) {
-      finishEncounter('spooked')
-    } else {
-      finishEncounter('miss')
-    }
-  }
-
-  const handleSubmit = () => {
-    clearInterval(timerRef.current)
-    const numAnswer = parseFloat(answer)
-
-    if (isNaN(numAnswer)) {
-      finishEncounter('miss')
+    if (phase !== 'math' && phase !== 'aiming') {
+      cancelAnimationFrame(animFrameRef.current)
       return
     }
 
-    if (Math.abs(numAnswer - question.answer) < 0.01) {
+    let startTime = null
+    let lastX = animalPos.x
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp
+      const elapsed = (timestamp - startTime) / 1000
+
+      const pos = getAnimalPath(elapsed, animalSpeed)
+      setAnimalPos(pos)
+
+      // Track facing direction
+      if (pos.x > lastX + 0.1) setAnimalFacing('right')
+      else if (pos.x < lastX - 0.1) setAnimalFacing('left')
+      lastX = pos.x
+
+      animFrameRef.current = requestAnimationFrame(animate)
+    }
+
+    animFrameRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animFrameRef.current)
+  }, [phase, animalSpeed])
+
+  // ---- CROSSHAIR with sway (during aiming) ----
+  useEffect(() => {
+    if (phase !== 'aiming' || shotFired) return
+
+    aimStartTime.current = Date.now()
+
+    const updateCrosshair = () => {
+      const elapsed = (Date.now() - aimStartTime.current) / 1000
+      // Sway amount inversely proportional to steadiness
+      const sway = (1 - aimSteadiness) * 12
+      const swayX = Math.sin(elapsed * 3.5) * sway + Math.sin(elapsed * 7) * (sway * 0.3)
+      const swayY = Math.cos(elapsed * 2.8) * sway + Math.cos(elapsed * 5.5) * (sway * 0.3)
+
+      setCrosshairPos({
+        x: Math.max(2, Math.min(98, mousePos.x + swayX)),
+        y: Math.max(2, Math.min(98, mousePos.y + swayY)),
+      })
+
+      animFrameRef.current = requestAnimationFrame(updateCrosshair)
+    }
+
+    animFrameRef.current = requestAnimationFrame(updateCrosshair)
+    return () => cancelAnimationFrame(animFrameRef.current)
+  }, [phase, mousePos, aimSteadiness, shotFired])
+
+  // ---- MOUSE TRACKING ----
+  const handleMouseMove = useCallback((e) => {
+    if (phase !== 'aiming' || shotFired) return
+    const rect = huntingGroundRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setMousePos({
+      x: Math.max(2, Math.min(98, x)),
+      y: Math.max(2, Math.min(98, y)),
+    })
+  }, [phase, shotFired])
+
+  // ---- SUBMIT MATH ANSWER ----
+  const handleSubmitAnswer = () => {
+    clearInterval(timerRef.current)
+    const numAnswer = parseFloat(answer)
+
+    if (isNaN(numAnswer) || Math.abs(numAnswer - question.answer) >= 0.01) {
+      // Wrong — very shaky aim
+      setAimSteadiness(0.1)
+    } else {
+      // Correct! Steadiness based on speed
       const timePercent = timeLeft / totalTime
       if (timePercent > 0.6) {
-        finishEncounter('perfect')
+        setAimSteadiness(0.95) // Rock steady
+      } else if (timePercent > 0.3) {
+        setAimSteadiness(0.7) // Pretty steady
       } else {
-        finishEncounter('hit')
+        setAimSteadiness(0.45) // A bit shaky
       }
+    }
+
+    setPhase('aiming')
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && answer.trim()) {
+      handleSubmitAnswer()
+    }
+  }
+
+  // ---- SHOOT ----
+  const handleShoot = useCallback(() => {
+    if (phase !== 'aiming' || shotFired) return
+
+    setShotFired(true)
+    cancelAnimationFrame(animFrameRef.current)
+
+    // Calculate distance from crosshair to animal center
+    const dx = crosshairPos.x - animalPos.x
+    const dy = crosshairPos.y - animalPos.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    // Hit thresholds (in % of hunting ground)
+    let outcome
+    if (distance < 5) {
+      outcome = 'perfect'
+    } else if (distance < 10) {
+      outcome = 'hit'
+    } else if (distance < 16) {
+      outcome = 'graze'
     } else {
-      finishEncounter('miss')
-    }
-  }
-
-  const finishEncounter = (outcome) => {
-    setResult(outcome)
-    setPhase('result')
-    state.recordHunt(currentAnimal.id, outcome)
-
-    // Check quests
-    const newlyCompleted = state.checkAndCompleteQuests()
-    if (newlyCompleted.length > 0) {
-      setQuestCompleted(newlyCompleted)
+      outcome = 'miss'
     }
 
-    setEncounterCount((c) => c + 1)
-  }
+    setShotResult(outcome)
+
+    // Record after a brief delay for the shot animation
+    setTimeout(() => {
+      // Map graze to spooked for the game store
+      const storeResult = outcome === 'graze' ? 'spooked' : outcome
+      state.recordHunt(currentAnimal.id, storeResult)
+      const newlyCompleted = state.checkAndCompleteQuests()
+      if (newlyCompleted.length > 0) {
+        setQuestCompleted(newlyCompleted)
+      }
+      setEncounterCount((c) => c + 1)
+      setPhase('result')
+    }, 1200)
+  }, [phase, shotFired, crosshairPos, animalPos, currentAnimal, state])
+
+  // Click to shoot during aiming
+  const handleGroundClick = useCallback(() => {
+    if (phase === 'aiming' && !shotFired) {
+      handleShoot()
+    }
+  }, [phase, shotFired, handleShoot])
 
   const handleNext = () => {
     setQuestCompleted([])
@@ -133,14 +251,16 @@ export default function ExpeditionScreen() {
     }
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && answer.trim()) {
-      handleSubmit()
-    }
-  }
-
   const timerPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100
   const timerColor = timerPercent > 60 ? '#8bc48b' : timerPercent > 30 ? '#e8c97a' : '#e87a7a'
+
+  const steadinessLabel = aimSteadiness > 0.8 ? 'Steady' :
+    aimSteadiness > 0.5 ? 'Slightly Shaky' :
+    aimSteadiness > 0.25 ? 'Shaky' : 'Very Shaky'
+
+  const steadinessColor = aimSteadiness > 0.8 ? '#8bc48b' :
+    aimSteadiness > 0.5 ? '#e8c97a' :
+    aimSteadiness > 0.25 ? '#e8a07a' : '#e87a7a'
 
   return (
     <div className="expedition-screen">
@@ -161,6 +281,10 @@ export default function ExpeditionScreen() {
         {/* SCOUTING */}
         {phase === 'scouting' && (
           <div className="phase-scouting">
+            <div className="hunting-ground scouting-ground">
+              <div className="ground-trees" />
+              <div className="ground-grass" />
+            </div>
             <div className="scene-text">
               You creep through the tall grass, eyes scanning for movement...
             </div>
@@ -174,7 +298,7 @@ export default function ExpeditionScreen() {
         {phase === 'no_arrows' && (
           <div className="phase-no-arrows">
             <div className="scene-text">
-              You reach for your quiver... it's empty. Time to head back to camp and craft more arrows.
+              You reach for your quiver... it's empty. Head back to camp and craft more arrows.
             </div>
             <button className="scout-btn" onClick={() => state.goTo('camp')}>
               Return to Camp
@@ -182,105 +306,168 @@ export default function ExpeditionScreen() {
           </div>
         )}
 
-        {/* ENCOUNTER — animal spotted */}
-        {phase === 'encounter' && currentAnimal && (
-          <div className="phase-encounter">
-            <div className="animal-spotted">
-              <span className="animal-icon">{currentAnimal.icon}</span>
-              <div className="spotted-text">
-                A {currentAnimal.name} appears!
+        {/* MATH PHASE — answer before you aim */}
+        {phase === 'math' && currentAnimal && (
+          <div className="phase-math">
+            <div className="hunting-ground">
+              <div className="ground-trees" />
+              <div className="ground-grass" />
+              <div
+                className={`animal-target ${animalFacing}`}
+                style={{ left: `${animalPos.x}%`, top: `${animalPos.y}%` }}
+              >
+                {currentAnimal.icon}
               </div>
             </div>
-            <div className="challenge-box">
-              <div className="challenge-label">Hunter's Calculation:</div>
-              <div className="challenge-question">{question.question}</div>
-              <button className="aim-btn" onClick={startAnswering}>
-                Take Aim (Start Timer)
-              </button>
+
+            <div className="math-overlay">
+              <div className="timer-bar-container">
+                <div
+                  className="timer-bar"
+                  style={{ width: `${timerPercent}%`, backgroundColor: timerColor }}
+                />
+              </div>
+              <div className="timer-text">{timeLeft.toFixed(1)}s</div>
+
+              <div className="challenge-box">
+                <div className="challenge-label">Quick — solve this to steady your aim!</div>
+                <div className="challenge-question">{question.question}</div>
+                <div className="answer-row">
+                  <input
+                    ref={inputRef}
+                    type="number"
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Your answer..."
+                    className="answer-input"
+                    step="any"
+                  />
+                  <button
+                    className="submit-answer-btn"
+                    onClick={handleSubmitAnswer}
+                    disabled={!answer.trim()}
+                  >
+                    LOCK IN
+                  </button>
+                </div>
+                {!showHint && (
+                  <button className="hint-btn" onClick={() => setShowHint(true)}>
+                    Need a hint?
+                  </button>
+                )}
+                {showHint && question.hint && (
+                  <div className="hint-text">Hint: {question.hint}</div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* ANSWERING — timer running */}
-        {phase === 'answering' && currentAnimal && (
-          <div className="phase-answering">
-            <div className="animal-spotted">
-              <span className="animal-icon">{currentAnimal.icon}</span>
+        {/* AIMING PHASE — first person view, click to shoot */}
+        {phase === 'aiming' && currentAnimal && (
+          <div className="phase-aiming">
+            <div className="aim-hud">
+              <span className="steadiness-label" style={{ color: steadinessColor }}>
+                Aim: {steadinessLabel}
+              </span>
+              <span className="aim-instruction">
+                {shotFired ? '' : 'Move mouse to aim — CLICK to shoot!'}
+              </span>
             </div>
 
-            <div className="timer-bar-container">
+            <div
+              ref={huntingGroundRef}
+              className={`hunting-ground aiming-ground ${shotFired ? 'shot-fired' : ''}`}
+              onMouseMove={handleMouseMove}
+              onClick={handleGroundClick}
+            >
+              <div className="ground-trees" />
+              <div className="ground-grass" />
+
+              {/* Animal */}
               <div
-                className="timer-bar"
-                style={{ width: `${timerPercent}%`, backgroundColor: timerColor }}
-              />
-            </div>
-            <div className="timer-text">{timeLeft.toFixed(1)}s</div>
-
-            <div className="challenge-box">
-              <div className="challenge-question">{question.question}</div>
-              <div className="answer-row">
-                <input
-                  ref={inputRef}
-                  type="number"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Your answer..."
-                  className="answer-input"
-                  step="any"
-                />
-                <button
-                  className="shoot-btn"
-                  onClick={handleSubmit}
-                  disabled={!answer.trim()}
-                >
-                  SHOOT!
-                </button>
+                className={`animal-target ${animalFacing} ${shotFired ? 'animal-shot' : ''} ${shotFired && shotResult === 'miss' ? 'animal-flee' : ''}`}
+                style={{ left: `${animalPos.x}%`, top: `${animalPos.y}%` }}
+              >
+                {currentAnimal.icon}
               </div>
-              {!showHint && (
-                <button className="hint-btn" onClick={() => setShowHint(true)}>
-                  Need a hint?
-                </button>
+
+              {/* Crosshair */}
+              {!shotFired && (
+                <div
+                  className="crosshair"
+                  style={{ left: `${crosshairPos.x}%`, top: `${crosshairPos.y}%` }}
+                >
+                  <div className="crosshair-line crosshair-h" />
+                  <div className="crosshair-line crosshair-v" />
+                  <div className="crosshair-dot" />
+                </div>
               )}
-              {showHint && question.hint && (
-                <div className="hint-text">Hint: {question.hint}</div>
+
+              {/* Shot impact */}
+              {shotFired && (
+                <div
+                  className="shot-impact"
+                  style={{ left: `${crosshairPos.x}%`, top: `${crosshairPos.y}%` }}
+                >
+                  {shotResult === 'perfect' && '🎯'}
+                  {shotResult === 'hit' && '💥'}
+                  {shotResult === 'graze' && '💨'}
+                  {shotResult === 'miss' && '❌'}
+                </div>
               )}
+
+              {/* Bow frame at bottom */}
+              <div className="bow-frame">
+                <div className="bow-string" />
+                <div className="bow-limb bow-limb-left" />
+                <div className="bow-limb bow-limb-right" />
+                {!shotFired && <div className="arrow-nocked" />}
+              </div>
             </div>
           </div>
         )}
 
         {/* RESULT */}
         {phase === 'result' && (
-          <div className={`phase-result result-${result}`}>
+          <div className={`phase-result result-${shotResult}`}>
             <div className="result-icon">
-              {result === 'perfect' && '🎯'}
-              {result === 'hit' && '✅'}
-              {result === 'spooked' && '💨'}
-              {result === 'miss' && '❌'}
+              {shotResult === 'perfect' && '🎯'}
+              {shotResult === 'hit' && '✅'}
+              {shotResult === 'graze' && '💨'}
+              {shotResult === 'miss' && '❌'}
             </div>
             <div className="result-title">
-              {result === 'perfect' && 'PERFECT SHOT!'}
-              {result === 'hit' && 'Hit!'}
-              {result === 'spooked' && 'Spooked!'}
-              {result === 'miss' && 'Miss!'}
+              {shotResult === 'perfect' && 'PERFECT SHOT!'}
+              {shotResult === 'hit' && 'Hit!'}
+              {shotResult === 'graze' && 'Grazed!'}
+              {shotResult === 'miss' && 'Miss!'}
             </div>
             <div className="result-desc">
-              {result === 'perfect' &&
-                `Clean hit! The ${currentAnimal.name} is yours, plus bonus materials. +${currentAnimal.honor * 3} honor`}
-              {result === 'hit' &&
-                `You got the ${currentAnimal.name}! +${currentAnimal.honor} honor`}
-              {result === 'spooked' &&
-                `The ${currentAnimal.name} heard you hesitate and bolted! Correct answer, but too slow.`}
-              {result === 'miss' &&
-                `Your arrow flies wide. The ${currentAnimal.name} escapes.`}
+              {shotResult === 'perfect' &&
+                `Dead center! The ${currentAnimal.name} is yours, plus bonus materials. +${currentAnimal.honor * 3} honor`}
+              {shotResult === 'hit' &&
+                `Good shot! You got the ${currentAnimal.name}! +${currentAnimal.honor} honor`}
+              {shotResult === 'graze' &&
+                `Your arrow grazed the ${currentAnimal.name} and it bolted!`}
+              {shotResult === 'miss' &&
+                `Your arrow thuds into the dirt. The ${currentAnimal.name} escapes into the brush.`}
             </div>
 
-            {(result === 'miss' || result === 'spooked') && (
+            {shotResult !== 'perfect' && shotResult !== 'hit' && (
               <div className="correct-answer">
-                The answer was: <strong>{question.answer}</strong>
+                The math answer was: <strong>{question.answer}</strong>
                 {question.hint && <div className="result-hint">{question.hint}</div>}
               </div>
             )}
+
+            <div className="accuracy-feedback">
+              {aimSteadiness > 0.8 && 'Your math was spot on — your aim was rock steady.'}
+              {aimSteadiness > 0.5 && aimSteadiness <= 0.8 && 'Decent math, but a faster answer would have steadied your aim more.'}
+              {aimSteadiness > 0.25 && aimSteadiness <= 0.5 && 'Your shaky math made for a shaky shot. Practice those calculations!'}
+              {aimSteadiness <= 0.25 && 'Wrong answer — your hands were trembling. Nail the math next time for a clean shot!'}
+            </div>
 
             {questCompleted.length > 0 && (
               <div className="quest-complete-banner">
