@@ -1,0 +1,183 @@
+.crafting-screen {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #3a2d1e 0%, #4a3828 100%);
+  color: #f5e6d3;
+  padding: 1rem;
+}
+
+.crafting-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(232, 201, 122, 0.3);
+}
+
+.crafting-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #e8c97a;
+}
+
+.crafted-banner {
+  background: rgba(139, 196, 139, 0.2);
+  border: 1px solid #8bc48b;
+  color: #8bc48b;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.crafting-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recipe-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(232, 201, 122, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recipe-card:hover, .recipe-card.selected {
+  border-color: rgba(232, 201, 122, 0.5);
+}
+
+.recipe-card.craftable {
+  border-color: rgba(139, 196, 139, 0.4);
+}
+
+.recipe-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e8c97a;
+  margin-bottom: 0.25rem;
+}
+
+.recipe-desc {
+  font-size: 0.85rem;
+  color: #a89279;
+  margin-bottom: 0.75rem;
+}
+
+.recipe-label {
+  font-size: 0.8rem;
+  color: #8b7a6b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.material-req {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.2rem 0;
+  font-size: 0.9rem;
+}
+
+.material-req.have {
+  color: #8bc48b;
+}
+
+.material-req.need {
+  color: #e87a7a;
+}
+
+.material-count {
+  font-weight: 600;
+}
+
+.recipe-produces {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #c4a882;
+}
+
+.craft-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.can-craft-note {
+  font-size: 0.8rem;
+  color: #8bc48b;
+}
+
+.craft-btn {
+  background: #5a7a5c;
+  color: #f5e6d3;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.craft-btn:hover {
+  background: #6b8e6d;
+}
+
+.not-enough {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #8b7a6b;
+  font-style: italic;
+}
+
+.current-materials {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(232, 201, 122, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+  align-self: flex-start;
+}
+
+.current-materials h3 {
+  margin: 0 0 0.75rem;
+  color: #e8c97a;
+  font-size: 1rem;
+}
+
+.mat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+  color: #d4c4b0;
+}
+
+.mat-qty {
+  color: #e8c97a;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .crafting-layout {
+    grid-template-columns: 1fr;
+  }
+  .current-materials {
+    position: static;
+  }
+}

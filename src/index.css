@@ -1,0 +1,28 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.5;
+  color: #f5e6d3;
+  background-color: #2d1b0e;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  line-height: 1.2;
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: #e8c97a;
+}
