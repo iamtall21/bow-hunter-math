@@ -558,6 +558,133 @@
   background: #6b8e6d;
 }
 
+/* ---- FORAGING ---- */
+.phase-forage {
+  padding: 1.5rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.forage-scene {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(139, 196, 139, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.forage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  color: #c4c4a0;
+  margin-bottom: 1rem;
+}
+
+.forage-icon {
+  font-size: 1.8rem;
+}
+
+.forage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.forage-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(139, 196, 139, 0.1);
+  border-radius: 8px;
+}
+
+.forage-item-icon {
+  font-size: 1.4rem;
+}
+
+.forage-item-name {
+  font-weight: 600;
+  color: #8bc48b;
+  flex: 1;
+}
+
+.forage-item-qty {
+  font-size: 0.9rem;
+  color: #c4a882;
+}
+
+.forage-challenge {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+
+.forage-prompt {
+  font-size: 0.9rem;
+  color: #e8c97a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.forage-question {
+  font-size: 1.05rem;
+  color: #f5e6d3;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.skip-forage-btn {
+  display: block;
+  margin: 0.75rem auto 0;
+  background: none;
+  border: none;
+  color: #8b7a6b;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.skip-forage-btn:hover {
+  color: #a89279;
+}
+
+.forage-result {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.forage-result-text {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.forage-success {
+  color: #8bc48b;
+  font-weight: 600;
+}
+
+.forage-basic {
+  color: #c4a882;
+}
+
+.forage-correct {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #a89279;
+}
+
+.forage-hint {
+  font-size: 0.85rem;
+  color: #8bc48b;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 600px) {
   .expedition-header {
     flex-direction: column;

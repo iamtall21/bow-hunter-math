@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { ANIMALS, AREAS } from '../data/gameData'
+import { ANIMALS, AREAS, MATERIALS } from '../data/gameData'
 import { generateQuestion, getTimerSeconds } from '../data/mathTemplates'
 import './ExpeditionScreen.css'
 
@@ -40,6 +40,13 @@ export default function ExpeditionScreen() {
   const [aimTime, setAimTime] = useState(0)
   const [animalSpeed, setAnimalSpeed] = useState(0.5)
   const [animalFacing, setAnimalFacing] = useState('right')
+
+  // Foraging system
+  const [forageItems, setForageItems] = useState([])
+  const [forageQuestion, setForageQuestion] = useState(null)
+  const [forageAnswer, setForageAnswer] = useState('')
+  const [forageResult, setForageResult] = useState(null)
+  const forageInputRef = useRef(null)
 
   const huntingGroundRef = useRef(null)
   const animFrameRef = useRef(null)
@@ -300,8 +307,75 @@ export default function ExpeditionScreen() {
     if (encounterCount >= maxEncounters) {
       state.goTo('camp')
     } else {
-      setPhase('scouting')
+      // Start foraging phase between hunts
+      startForaging()
     }
+  }
+
+  // ---- FORAGING ----
+  const startForaging = () => {
+    const areaMaterials = area.materialsFound
+    // Pick 2-3 random materials spotted on the trail
+    const count = 2 + Math.floor(Math.random() * 2)
+    const items = []
+    for (let i = 0; i < count; i++) {
+      const matId = areaMaterials[Math.floor(Math.random() * areaMaterials.length)]
+      const baseQty = 1 + Math.floor(Math.random() * 3)
+      items.push({ id: matId, baseQty, bonusQty: baseQty * 2 })
+    }
+    setForageItems(items)
+    setForageAnswer('')
+    setForageResult(null)
+
+    // Generate a simpler/quicker foraging math question
+    const q = generateQuestion(state.difficultyTier, state.mathTopic)
+    setForageQuestion(q)
+    setPhase('forage')
+  }
+
+  useEffect(() => {
+    if (phase === 'forage' && forageInputRef.current) {
+      forageInputRef.current.focus()
+    }
+  }, [phase])
+
+  const handleForageSubmit = () => {
+    const numAnswer = parseFloat(forageAnswer)
+    const correct = !isNaN(numAnswer) && Math.abs(numAnswer - forageQuestion.answer) < 0.01
+
+    // Add materials to inventory
+    const inv = { ...state.inventory }
+    forageItems.forEach((item) => {
+      const qty = correct ? item.bonusQty : item.baseQty
+      inv[item.id] = (inv[item.id] || 0) + qty
+    })
+
+    // Directly update inventory via the store
+    useGameStore.setState({ inventory: inv })
+    state.saveGame()
+
+    setForageResult(correct ? 'bonus' : 'basic')
+  }
+
+  const handleForageKeyDown = (e) => {
+    if (e.key === 'Enter' && forageAnswer.trim()) {
+      handleForageSubmit()
+    }
+  }
+
+  const handleForageContinue = () => {
+    setPhase('scouting')
+  }
+
+  const handleSkipForage = () => {
+    // Collect base amounts without answering
+    const inv = { ...state.inventory }
+    forageItems.forEach((item) => {
+      inv[item.id] = (inv[item.id] || 0) + item.baseQty
+    })
+    useGameStore.setState({ inventory: inv })
+    state.saveGame()
+    setPhase('scouting')
   }
 
   const timerPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100
@@ -478,6 +552,87 @@ export default function ExpeditionScreen() {
                 <div className="bow-limb bow-limb-right" />
                 {!shotFired && <div className="arrow-nocked" />}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* FORAGING */}
+        {phase === 'forage' && forageQuestion && (
+          <div className="phase-forage">
+            <div className="forage-scene">
+              <div className="forage-header">
+                <span className="forage-icon">🌿</span>
+                <span>You spot some useful materials on the trail!</span>
+              </div>
+
+              <div className="forage-items">
+                {forageItems.map((item, i) => {
+                  const mat = MATERIALS[item.id]
+                  return (
+                    <div key={i} className="forage-item">
+                      <span className="forage-item-icon">{mat?.icon || '📦'}</span>
+                      <span className="forage-item-name">{mat?.name || item.id}</span>
+                      <span className="forage-item-qty">
+                        {forageResult ? (
+                          forageResult === 'bonus' ? `+${item.bonusQty}` : `+${item.baseQty}`
+                        ) : (
+                          `${item.baseQty} — or ${item.bonusQty} if you solve this!`
+                        )}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {!forageResult && (
+                <div className="forage-challenge">
+                  <div className="forage-prompt">Solve this to gather extra materials:</div>
+                  <div className="forage-question">{forageQuestion.question}</div>
+                  <div className="answer-row">
+                    <input
+                      ref={forageInputRef}
+                      type="number"
+                      value={forageAnswer}
+                      onChange={(e) => setForageAnswer(e.target.value)}
+                      onKeyDown={handleForageKeyDown}
+                      placeholder="Your answer..."
+                      className="answer-input"
+                      step="any"
+                    />
+                    <button
+                      className="submit-answer-btn"
+                      onClick={handleForageSubmit}
+                      disabled={!forageAnswer.trim()}
+                    >
+                      GATHER
+                    </button>
+                  </div>
+                  <button className="skip-forage-btn" onClick={handleSkipForage}>
+                    Just grab what I can and move on
+                  </button>
+                </div>
+              )}
+
+              {forageResult && (
+                <div className={`forage-result ${forageResult}`}>
+                  {forageResult === 'bonus' ? (
+                    <div className="forage-result-text forage-success">
+                      Nice! You knew exactly where to look — gathered the full haul!
+                    </div>
+                  ) : (
+                    <div className="forage-result-text forage-basic">
+                      <div>You grabbed what you could find.</div>
+                      <div className="forage-correct">
+                        The answer was: <strong>{forageQuestion.answer}</strong>
+                        {forageQuestion.hint && <div className="forage-hint">{forageQuestion.hint}</div>}
+                      </div>
+                    </div>
+                  )}
+                  <button className="next-btn" onClick={handleForageContinue}>
+                    Keep Moving
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
