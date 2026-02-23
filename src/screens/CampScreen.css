@@ -203,6 +203,41 @@
   font-weight: 600;
 }
 
+.topic-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: #a89279;
+}
+
+.topic-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.topic-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(232, 201, 122, 0.3);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  color: #c4a882;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.topic-btn:hover {
+  border-color: #e8c97a;
+  color: #e8c97a;
+}
+
+.topic-btn.active {
+  background: #e8c97a;
+  color: #2d1b0e;
+  border-color: #e8c97a;
+  font-weight: 600;
+}
+
 .empty-msg {
   color: #8b7a6b;
   font-size: 0.85rem;

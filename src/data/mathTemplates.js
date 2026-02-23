@@ -1,5 +1,6 @@
 // Each template generates a unique question with randomized values.
 // tier: 1 = 3rd grade, 2 = 4th grade, 3 = 5th grade
+// topic: multiplication, division, addition, subtraction, fractions, ratios, percentages, multi-step
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -9,12 +10,24 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+export const TOPICS = {
+  all: 'All Topics',
+  multiplication: 'Multiplication',
+  division: 'Division',
+  addition: 'Addition & Subtraction',
+  fractions: 'Fractions',
+  ratios: 'Ratios & Proportions',
+  percentages: 'Percentages',
+  multi_step: 'Multi-Step Problems',
+}
+
 const TEMPLATES = [
   // ---- TIER 1: Basic operations ----
   {
     tier: 1,
+    topic: 'multiplication',
     generate() {
-      const animal = pick(['rabbit', 'quail', 'turkey', 'squirrel'])
+      const animal = pick(['rabbit', 'quail', 'turkey', 'squirrel', 'pheasant'])
       const packs = randInt(2, 5)
       const perPack = randInt(2, 6)
       return {
@@ -26,6 +39,7 @@ const TEMPLATES = [
   },
   {
     tier: 1,
+    topic: 'addition',
     generate() {
       const total = randInt(12, 30)
       const used = randInt(3, total - 2)
@@ -38,6 +52,7 @@ const TEMPLATES = [
   },
   {
     tier: 1,
+    topic: 'division',
     generate() {
       const meat = randInt(10, 30)
       const families = pick([2, 3, 4, 5, 6])
@@ -51,6 +66,7 @@ const TEMPLATES = [
   },
   {
     tier: 1,
+    topic: 'multiplication',
     generate() {
       const feathersPerArrow = pick([2, 3, 4])
       const arrows = randInt(3, 8)
@@ -63,6 +79,7 @@ const TEMPLATES = [
   },
   {
     tier: 1,
+    topic: 'addition',
     generate() {
       const a = randInt(15, 50)
       const b = randInt(10, 40)
@@ -75,6 +92,7 @@ const TEMPLATES = [
   },
   {
     tier: 1,
+    topic: 'multiplication',
     generate() {
       const traps = randInt(3, 7)
       const baitPer = randInt(2, 4)
@@ -85,10 +103,52 @@ const TEMPLATES = [
       }
     },
   },
+  {
+    tier: 1,
+    topic: 'division',
+    generate() {
+      const perBundle = pick([3, 4, 5, 6])
+      const bundles = randInt(2, 6)
+      const total = perBundle * bundles
+      return {
+        question: `You collected ${total} feathers. You tie them in bundles of ${perBundle}. How many bundles do you get?`,
+        answer: bundles,
+        hint: `${total} ÷ ${perBundle}`,
+      }
+    },
+  },
+  {
+    tier: 1,
+    topic: 'addition',
+    generate() {
+      const morning = randInt(3, 12)
+      const afternoon = randInt(3, 12)
+      const evening = randInt(1, 5)
+      return {
+        question: `You caught ${morning} fish in the morning, ${afternoon} in the afternoon, and ${evening} in the evening. How many fish total?`,
+        answer: morning + afternoon + evening,
+        hint: `${morning} + ${afternoon} + ${evening}`,
+      }
+    },
+  },
+  {
+    tier: 1,
+    topic: 'multiplication',
+    generate() {
+      const rows = randInt(3, 6)
+      const cols = randInt(3, 8)
+      return {
+        question: `You're drying meat on a rack with ${rows} rows and ${cols} pieces per row. How many pieces of meat are drying?`,
+        answer: rows * cols,
+        hint: `${rows} × ${cols}`,
+      }
+    },
+  },
 
   // ---- TIER 2: Multi-step, intro fractions ----
   {
     tier: 2,
+    topic: 'division',
     generate() {
       const distance = pick([60, 80, 100, 120, 150])
       const divisor = pick([10, 15, 20])
@@ -101,6 +161,7 @@ const TEMPLATES = [
   },
   {
     tier: 2,
+    topic: 'fractions',
     generate() {
       const total = pick([12, 18, 24, 30])
       const fraction = pick([2, 3, 4])
@@ -114,6 +175,7 @@ const TEMPLATES = [
   },
   {
     tier: 2,
+    topic: 'multi_step',
     generate() {
       const speed = randInt(5, 12)
       const breaths = randInt(2, 5)
@@ -127,6 +189,7 @@ const TEMPLATES = [
   },
   {
     tier: 2,
+    topic: 'multi_step',
     generate() {
       const batches = randInt(2, 4)
       const sticksPerBatch = 3
@@ -144,6 +207,7 @@ const TEMPLATES = [
   },
   {
     tier: 2,
+    topic: 'ratios',
     generate() {
       const pelts = pick([5, 10, 15, 20])
       const rate = pick([2, 3, 5])
@@ -156,6 +220,7 @@ const TEMPLATES = [
   },
   {
     tier: 2,
+    topic: 'multi_step',
     generate() {
       const tracks = randInt(8, 20)
       const spacing = pick([2, 3, 4])
@@ -166,10 +231,39 @@ const TEMPLATES = [
       }
     },
   },
+  {
+    tier: 2,
+    topic: 'fractions',
+    generate() {
+      const total = pick([16, 20, 24, 32])
+      const half = total / 2
+      const quarter = total / 4
+      return {
+        question: `You have ${total} pieces of jerky. You eat half today and give away a quarter of what's left. How many do you still have?`,
+        answer: half - (half / 4),
+        hint: `Half of ${total} = ${half}. A quarter of ${half} = ${quarter / 2}. Then ${half} − ${quarter / 2}`,
+      }
+    },
+  },
+  {
+    tier: 2,
+    topic: 'ratios',
+    generate() {
+      const fish = pick([3, 4, 5])
+      const cord = pick([1, 2])
+      const totalFish = fish * randInt(2, 5)
+      return {
+        question: `The trader swaps ${fish} fish for ${cord} sinew cord${cord > 1 ? 's' : ''}. You have ${totalFish} fish. How many sinew cords can you get?`,
+        answer: (totalFish / fish) * cord,
+        hint: `${totalFish} ÷ ${fish} = ${totalFish / fish} trades. ${totalFish / fish} × ${cord}`,
+      }
+    },
+  },
 
   // ---- TIER 3: Fractions, decimals, ratios ----
   {
     tier: 3,
+    topic: 'fractions',
     generate() {
       const total = pick([18, 24, 30, 36])
       const numerator = pick([2, 3])
@@ -186,6 +280,7 @@ const TEMPLATES = [
   },
   {
     tier: 3,
+    topic: 'ratios',
     generate() {
       const pelts = pick([5, 8, 10])
       const arrowheads = pick([2, 3, 4])
@@ -199,6 +294,7 @@ const TEMPLATES = [
   },
   {
     tier: 3,
+    topic: 'percentages',
     generate() {
       const total = pick([20, 25, 40, 50])
       const percent = pick([10, 20, 25, 50])
@@ -211,6 +307,7 @@ const TEMPLATES = [
   },
   {
     tier: 3,
+    topic: 'multi_step',
     generate() {
       const meatPerDay = pick([3, 4, 5])
       const people = randInt(3, 6)
@@ -224,6 +321,7 @@ const TEMPLATES = [
   },
   {
     tier: 3,
+    topic: 'ratios',
     generate() {
       const distance = pick([30, 45, 60, 90])
       const windPerTen = pick([2, 3, 4])
@@ -236,6 +334,7 @@ const TEMPLATES = [
   },
   {
     tier: 3,
+    topic: 'ratios',
     generate() {
       const cups = pick([2, 3, 4])
       const servings = cups * pick([3, 4, 5])
@@ -248,13 +347,55 @@ const TEMPLATES = [
       }
     },
   },
+  {
+    tier: 3,
+    topic: 'percentages',
+    generate() {
+      const original = pick([40, 50, 60, 80])
+      const percent = pick([10, 20, 25])
+      const discount = (original * percent) / 100
+      return {
+        question: `A trading post sells a knife for ${original} pelts. They offer you ${percent}% off for bringing rare feathers. How many pelts do you pay?`,
+        answer: original - discount,
+        hint: `${percent}% of ${original} = ${discount}. Then ${original} − ${discount}`,
+      }
+    },
+  },
+  {
+    tier: 3,
+    topic: 'fractions',
+    generate() {
+      const denominator = pick([3, 4, 5, 6])
+      const whole = pick([12, 18, 24, 30])
+      const numerator1 = 1
+      const numerator2 = pick([1, 2])
+      while (numerator1 + numerator2 >= denominator) { return this.generate() }
+      const part1 = (whole * numerator1) / denominator
+      const part2 = (whole * numerator2) / denominator
+      if (!Number.isInteger(part1) || !Number.isInteger(part2)) return this.generate()
+      return {
+        question: `You have ${whole} arrowheads. You give ${numerator1}/${denominator} to your brother and ${numerator2}/${denominator} to your cousin. How many do you keep?`,
+        answer: whole - part1 - part2,
+        hint: `${numerator1}/${denominator} of ${whole} = ${part1}. ${numerator2}/${denominator} of ${whole} = ${part2}. ${whole} − ${part1} − ${part2}`,
+      }
+    },
+  },
 ]
 
-export function generateQuestion(tier) {
-  const available = TEMPLATES.filter((t) => t.tier <= tier)
+export function generateQuestion(tier, topic = 'all') {
+  let available = TEMPLATES.filter((t) => t.tier <= tier)
+
+  if (topic && topic !== 'all') {
+    const topicFiltered = available.filter((t) => t.topic === topic)
+    // Fall back to all topics if no questions match the selected topic at this tier
+    if (topicFiltered.length > 0) {
+      available = topicFiltered
+    }
+  }
+
   const template = pick(available)
   const question = template.generate()
-  return { ...question, tier: template.tier }
+  return { ...question, tier: template.tier, topic: template.topic }
 }
 
 export function getTimerSeconds(difficulty) {

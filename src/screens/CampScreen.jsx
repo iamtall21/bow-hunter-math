@@ -1,5 +1,6 @@
 import { useGameStore } from '../store/gameStore'
 import { RANKS, MATERIALS } from '../data/gameData'
+import { TOPICS } from '../data/mathTemplates'
 import './CampScreen.css'
 
 export default function CampScreen() {
@@ -51,6 +52,22 @@ export default function CampScreen() {
           <span className="action-label">Crafting Bench</span>
           <span className="action-desc">Build gear and weapons</span>
         </button>
+
+        <div className="camp-panel topic-panel" style={{ gridColumn: '1 / -1' }}>
+          <h3>Math Focus</h3>
+          <p className="topic-desc">Pick a topic to practice, or hunt with all topics mixed in.</p>
+          <div className="topic-grid">
+            {Object.entries(TOPICS).map(([key, label]) => (
+              <button
+                key={key}
+                className={`topic-btn ${state.mathTopic === key ? 'active' : ''}`}
+                onClick={() => state.setTopic(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="camp-panel inventory-panel">
           <h3>Inventory</h3>

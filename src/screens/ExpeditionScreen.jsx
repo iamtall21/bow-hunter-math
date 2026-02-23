@@ -59,7 +59,7 @@ export default function ExpeditionScreen() {
     const animal = ANIMALS[animalId]
     setCurrentAnimal({ id: animalId, ...animal })
 
-    const q = generateQuestion(state.difficultyTier)
+    const q = generateQuestion(state.difficultyTier, state.mathTopic)
     setQuestion(q)
     setAnswer('')
     setShowHint(false)
@@ -74,7 +74,7 @@ export default function ExpeditionScreen() {
     setTimeLeft(seconds)
     setTotalTime(seconds)
     setPhase('math')
-  }, [state.inventory.arrow, state.difficultyTier, state.difficulty, area.animals])
+  }, [state.inventory.arrow, state.difficultyTier, state.difficulty, state.mathTopic, area.animals])
 
   // ---- MATH TIMER ----
   useEffect(() => {

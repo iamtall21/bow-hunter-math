@@ -18,6 +18,7 @@ function getDefaultState() {
     rankIndex: 0,
     difficultyTier: 1,
     difficulty: 'normal',
+    mathTopic: 'all',
     inventory: { ...STARTER_INVENTORY },
     craftedItems: {},
     unlockedAreas: ['meadow'],
@@ -73,6 +74,7 @@ export const useGameStore = create((set, get) => ({
       rankIndex: state.rankIndex,
       difficultyTier: state.difficultyTier,
       difficulty: state.difficulty,
+      mathTopic: state.mathTopic,
       inventory: state.inventory,
       craftedItems: state.craftedItems,
       unlockedAreas: state.unlockedAreas,
@@ -92,6 +94,11 @@ export const useGameStore = create((set, get) => ({
   // ---- NAVIGATION ----
   goTo(screen) {
     set({ screen })
+  },
+
+  setTopic(topic) {
+    set({ mathTopic: topic })
+    get().saveGame()
   },
 
   // ---- HUNTING RESULTS ----
