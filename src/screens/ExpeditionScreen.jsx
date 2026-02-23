@@ -455,12 +455,14 @@ export default function ExpeditionScreen() {
                 `Your arrow thuds into the dirt. The ${currentAnimal.name} escapes into the brush.`}
             </div>
 
-            {shotResult !== 'perfect' && shotResult !== 'hit' && (
-              <div className="correct-answer">
-                The math answer was: <strong>{question.answer}</strong>
-                {question.hint && <div className="result-hint">{question.hint}</div>}
+            <div className="question-review">
+              <div className="review-label">The Question:</div>
+              <div className="review-question">{question.question}</div>
+              <div className="review-answer">
+                Answer: <strong>{question.answer}</strong>
               </div>
-            )}
+              {question.hint && <div className="review-hint">How to solve it: {question.hint}</div>}
+            </div>
 
             <div className="accuracy-feedback">
               {aimSteadiness > 0.8 && 'Your math was spot on — your aim was rock steady.'}

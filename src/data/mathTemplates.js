@@ -259,9 +259,9 @@ export function generateQuestion(tier) {
 
 export function getTimerSeconds(difficulty) {
   switch (difficulty) {
-    case 'easy': return 15
-    case 'normal': return 10
-    case 'hunter': return 7
-    default: return 10
+    case 'easy': return 30
+    case 'normal': return 20
+    case 'hunter': return 12
+    default: return 20
   }
 }
