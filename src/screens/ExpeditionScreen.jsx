@@ -166,6 +166,59 @@ export default function ExpeditionScreen() {
     })
   }, [phase, shotFired])
 
+  // ---- KEYBOARD CONTROLS (arrow keys + spacebar) ----
+  const keysPressed = useRef({})
+
+  useEffect(() => {
+    if (phase !== 'aiming' || shotFired) return
+
+    const MOVE_SPEED = 1.2 // % per frame
+
+    const handleKeyDown = (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault()
+      }
+      keysPressed.current[e.key] = true
+
+      if (e.key === ' ') {
+        handleShoot()
+      }
+    }
+
+    const handleKeyUp = (e) => {
+      keysPressed.current[e.key] = false
+    }
+
+    // Continuous movement via animation frame
+    let frameId
+    const moveLoop = () => {
+      const keys = keysPressed.current
+      setMousePos((prev) => {
+        let { x, y } = prev
+        if (keys['ArrowLeft']) x -= MOVE_SPEED
+        if (keys['ArrowRight']) x += MOVE_SPEED
+        if (keys['ArrowUp']) y -= MOVE_SPEED
+        if (keys['ArrowDown']) y += MOVE_SPEED
+        return {
+          x: Math.max(2, Math.min(98, x)),
+          y: Math.max(2, Math.min(98, y)),
+        }
+      })
+      frameId = requestAnimationFrame(moveLoop)
+    }
+    frameId = requestAnimationFrame(moveLoop)
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      cancelAnimationFrame(frameId)
+      keysPressed.current = {}
+    }
+  }, [phase, shotFired, handleShoot])
+
   // ---- SUBMIT MATH ANSWER ----
   const handleSubmitAnswer = () => {
     clearInterval(timerRef.current)
@@ -372,7 +425,7 @@ export default function ExpeditionScreen() {
                 Aim: {steadinessLabel}
               </span>
               <span className="aim-instruction">
-                {shotFired ? '' : 'Move mouse to aim — CLICK to shoot!'}
+                {shotFired ? '' : 'Arrow keys or mouse to aim — SPACE or CLICK to shoot!'}
               </span>
             </div>
 
