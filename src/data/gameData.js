@@ -8,6 +8,7 @@ export const MATERIALS = {
   grip_wrap: { name: 'Grip Wrap', icon: '🎀' },
   willow: { name: 'Willow Branch', icon: '🌾' },
   cord: { name: 'Cord', icon: '🪢' },
+  spear: { name: 'Fishing Spear', icon: '🔱' },
 }
 
 // ---- RECIPES ----
@@ -31,7 +32,14 @@ export const RECIPES = {
     description: 'Woven willow trap for catching river fish.',
     materials: { willow: 12, cord: 8 },
     produces: { fish_trap: 1 },
-    unlocked: false,
+    unlocked: true,
+  },
+  fishing_spear: {
+    name: 'Fishing Spear',
+    description: 'A sharp-tipped spear for spearing fish in the river.',
+    materials: { stick: 4, flint: 8 },
+    produces: { spear: 1 },
+    unlocked: true,
   },
   snare: {
     name: 'Snare',
@@ -116,6 +124,60 @@ export const ANIMALS = {
     drops: { pelt: 3 },
     fleeChance: 0.6,
   },
+  trout: {
+    name: 'Rainbow Trout',
+    icon: '🐟',
+    area: 'river',
+    difficulty: 1,
+    honor: 2,
+    drops: { meat: 3, sinew: 1 },
+    fleeChance: 0.7,
+  },
+  catfish: {
+    name: 'Channel Catfish',
+    icon: '🐱',
+    area: 'river',
+    difficulty: 2,
+    honor: 3,
+    drops: { meat: 5, sinew: 2 },
+    fleeChance: 0.5,
+  },
+  bass: {
+    name: 'Largemouth Bass',
+    icon: '🐠',
+    area: 'river',
+    difficulty: 1,
+    honor: 1,
+    drops: { meat: 2 },
+    fleeChance: 0.8,
+  },
+  pike: {
+    name: 'Northern Pike',
+    icon: '🦈',
+    area: 'river',
+    difficulty: 2,
+    honor: 3,
+    drops: { meat: 6, cord: 1 },
+    fleeChance: 0.4,
+  },
+  elk: {
+    name: 'Bull Elk',
+    icon: '🫎',
+    area: 'forest',
+    difficulty: 3,
+    honor: 5,
+    drops: { meat: 12, pelt: 3, sinew: 2 },
+    fleeChance: 0.3,
+  },
+  antelope: {
+    name: 'Pronghorn Antelope',
+    icon: '🦌',
+    area: 'meadow',
+    difficulty: 3,
+    honor: 4,
+    drops: { meat: 6, pelt: 2, sinew: 1 },
+    fleeChance: 0.7,
+  },
 }
 
 // ---- AREAS ----
@@ -123,21 +185,42 @@ export const AREAS = {
   meadow: {
     name: 'The Meadow',
     description: 'Open grasslands with small game. A good place to start.',
-    animals: ['rabbit', 'quail', 'wild_turkey', 'squirrel', 'deer', 'pheasant', 'raccoon', 'fox'],
+    animals: ['rabbit', 'quail', 'wild_turkey', 'squirrel', 'deer', 'pheasant', 'raccoon', 'fox', 'antelope'],
     unlocked: true,
     minTier: 1,
     materialsFound: ['stick', 'feather', 'flint'],
   },
+  forest: {
+    name: 'The Forest',
+    description: 'Dense woodland with larger game lurking in the shadows.',
+    animals: ['deer', 'fox', 'raccoon', 'wild_turkey', 'squirrel', 'elk'],
+    unlocked: false,
+    minTier: 1,
+    materialsFound: ['stick', 'sinew', 'hide'],
+  },
   river: {
     name: 'The River',
-    description: 'A rushing river full of fish. You\'ll need a fish trap.',
-    animals: ['trout', 'catfish'],
+    description: 'A rushing river full of fish. Grab your spear!',
+    animals: ['trout', 'catfish', 'bass', 'pike'],
     unlocked: false,
-    unlockRequirement: 'fish_trap',
-    minTier: 2,
+    minTier: 1,
     materialsFound: ['willow', 'cord', 'sinew'],
   },
 }
+
+// ---- LEVELS (progression gating) ----
+export const LEVELS = [
+  { level: 1,  correctNeeded: 0,   unlocks: [], title: 'Apprentice' },
+  { level: 2,  correctNeeded: 5,   unlocks: [{ type: 'recipe', id: 'fishing_spear' }], title: 'Novice' },
+  { level: 3,  correctNeeded: 12,  unlocks: [{ type: 'area', id: 'forest' }], title: 'Scout' },
+  { level: 4,  correctNeeded: 20,  unlocks: [{ type: 'recipe', id: 'recurve_bow' }], title: 'Tracker' },
+  { level: 5,  correctNeeded: 30,  unlocks: [{ type: 'area', id: 'river' }], title: 'Hunter' },
+  { level: 6,  correctNeeded: 45,  unlocks: [{ type: 'recipe', id: 'fish_trap' }], title: 'Pathfinder' },
+  { level: 7,  correctNeeded: 60,  unlocks: [], title: 'Warrior' },
+  { level: 8,  correctNeeded: 80,  unlocks: [], title: 'Master Hunter' },
+  { level: 9,  correctNeeded: 100, unlocks: [], title: 'Elder' },
+  { level: 10, correctNeeded: 130, unlocks: [], title: 'Legend' },
+]
 
 // ---- RANKS ----
 export const RANKS = [
@@ -192,6 +275,20 @@ export const QUESTS = [
     goal: { type: 'hunt_total', count: 10 },
     reward: { honor: 15, materials: { cord: 10, willow: 12 } },
   },
+  {
+    id: 'first_fish',
+    title: 'First Catch',
+    description: 'Spear your first fish in The River.',
+    goal: { type: 'fish_total', count: 1 },
+    reward: { honor: 5, materials: { willow: 5 } },
+  },
+  {
+    id: 'five_fish',
+    title: 'River Provider',
+    description: 'Catch 5 fish total.',
+    goal: { type: 'fish_total', count: 5 },
+    reward: { honor: 10, materials: { cord: 8 } },
+  },
 ]
 
 // ---- STARTER INVENTORY ----
@@ -208,4 +305,5 @@ export const STARTER_INVENTORY = {
   pelt: 0,
   willow: 0,
   cord: 0,
+  spear: 1,
 }

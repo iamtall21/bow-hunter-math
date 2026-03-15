@@ -1,0 +1,294 @@
+/* ---- STALKING PHASE LAYOUT ---- */
+.stalking-phase {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- HUD ---- */
+.stalk-hud {
+  padding: 0.4rem 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.stalk-timer-bar-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  height: 8px;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
+}
+
+.stalk-timer-bar {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.1s linear;
+}
+
+.stalk-hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.stalk-time {
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 50px;
+}
+
+.stalk-instruction {
+  color: #c4a882;
+  animation: stalk-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes stalk-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.stalk-animal-name {
+  color: #e8c97a;
+  font-weight: 600;
+}
+
+/* ---- THE FIELD ---- */
+.stalking-field {
+  position: relative;
+  flex: 1;
+  background:
+    /* Grass gradient */
+    linear-gradient(
+      180deg,
+      #3a6a2a 0%,
+      #4a7a3a 15%,
+      #5a8f4a 30%,
+      #4d8040 50%,
+      #5a8f4a 70%,
+      #4a7a3a 85%,
+      #3a6a2a 100%
+    );
+  overflow: hidden;
+  border-top: 3px solid #2a4a1a;
+}
+
+/* Grass texture */
+.stalking-ground {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 4px at 8% 12%, rgba(90,160,70,0.35) 0%, transparent 100%),
+    radial-gradient(circle 3px at 20% 30%, rgba(70,140,50,0.25) 0%, transparent 100%),
+    radial-gradient(circle 5px at 35% 55%, rgba(90,160,70,0.3) 0%, transparent 100%),
+    radial-gradient(circle 3px at 50% 15%, rgba(80,150,60,0.3) 0%, transparent 100%),
+    radial-gradient(circle 4px at 65% 40%, rgba(70,140,50,0.25) 0%, transparent 100%),
+    radial-gradient(circle 3px at 78% 70%, rgba(90,160,70,0.35) 0%, transparent 100%),
+    radial-gradient(circle 5px at 90% 25%, rgba(80,150,60,0.3) 0%, transparent 100%),
+    radial-gradient(circle 4px at 42% 80%, rgba(70,140,50,0.25) 0%, transparent 100%),
+    radial-gradient(circle 3px at 15% 60%, rgba(90,160,70,0.3) 0%, transparent 100%),
+    radial-gradient(circle 4px at 55% 90%, rgba(80,150,60,0.35) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ---- ENVIRONMENT OBJECTS ---- */
+.stalking-env-obj {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---- ANIMAL ---- */
+.stalking-animal {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  transition: none;
+}
+
+.stalking-animal-icon {
+  font-size: 2.5rem;
+  display: block;
+  filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
+  user-select: none;
+}
+
+/* Grazing idle bob */
+.stalking-animal.grazing .stalking-animal-icon {
+  animation: stalk-graze 2s ease-in-out infinite;
+}
+
+@keyframes stalk-graze {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+/* Alert state */
+.stalking-animal.alert .stalking-animal-icon {
+  animation: none;
+  transform: scale(1.08);
+}
+
+/* Fleeing */
+.stalking-animal.fleeing .stalking-animal-icon {
+  animation: stalk-flee 0.12s ease-in-out infinite;
+}
+
+@keyframes stalk-flee {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+/* ---- AWARENESS RING ---- */
+.awareness-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 200, 50, 0.2);
+  pointer-events: none;
+  transition: border-color 0.3s;
+}
+
+.awareness-ring.alert {
+  border-color: rgba(255, 80, 50, 0.5);
+  animation: ring-pulse 0.5s ease-in-out infinite;
+}
+
+.awareness-ring.fleeing {
+  border-color: rgba(255, 50, 50, 0.6);
+}
+
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ---- ALERT INDICATOR ---- */
+.stalking-alert-indicator {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffcc00;
+  text-shadow: 0 0 6px rgba(255, 204, 0, 0.7);
+  animation: alert-bounce 0.3s ease-out;
+}
+
+@keyframes alert-bounce {
+  0% { transform: translateX(-50%) scale(0); opacity: 0; }
+  60% { transform: translateX(-50%) scale(1.4); }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ---- HUNTER ---- */
+.stalking-hunter {
+  position: absolute;
+  font-size: 2rem;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  user-select: none;
+  filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4));
+}
+
+.stalking-hunter.walking {
+  animation: walk-bob 0.25s ease-in-out infinite;
+}
+
+@keyframes walk-bob {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-3px); }
+}
+
+/* Facing directions - flip the emoji */
+.stalking-hunter.facing-left {
+  transform: translate(-50%, -50%) scaleX(-1);
+}
+.stalking-hunter.facing-left.walking {
+  animation: walk-bob-flipped 0.25s ease-in-out infinite;
+}
+@keyframes walk-bob-flipped {
+  0%, 100% { transform: translate(-50%, -50%) scaleX(-1) translateY(0); }
+  50% { transform: translate(-50%, -50%) scaleX(-1) translateY(-3px); }
+}
+
+/* ---- ARROW FLIGHT ---- */
+.stalking-arrow {
+  position: absolute;
+  left: var(--from-x);
+  top: var(--from-y);
+  width: 6px;
+  height: 6px;
+  background: #8B6914;
+  border-radius: 50%;
+  z-index: 15;
+  animation: arrow-fly 0.4s ease-in forwards;
+}
+
+@keyframes arrow-fly {
+  0% {
+    left: var(--from-x);
+    top: var(--from-y);
+    opacity: 1;
+  }
+  100% {
+    left: var(--to-x);
+    top: var(--to-y);
+    opacity: 0.6;
+  }
+}
+
+/* ---- SHOT RESULT ---- */
+.stalking-shot-result {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  z-index: 20;
+  animation: result-pop 0.4s ease-out;
+}
+
+@keyframes result-pop {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* ---- SHOOT BUTTON (mobile fallback) ---- */
+.shoot-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 12;
+  background: rgba(201, 122, 46, 0.85);
+  color: white;
+  border: 2px solid rgba(232, 201, 122, 0.5);
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shoot-btn:hover {
+  background: rgba(217, 138, 62, 0.9);
+}
+
+/* ---- MOBILE ---- */
+@media (max-width: 600px) {
+  .stalking-animal-icon {
+    font-size: 2rem;
+  }
+  .stalking-hunter {
+    font-size: 1.6rem;
+  }
+  .stalk-instruction {
+    display: none;
+  }
+}

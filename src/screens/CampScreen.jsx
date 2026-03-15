@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/gameStore'
 import { RANKS, MATERIALS } from '../data/gameData'
-import { TOPICS } from '../data/mathTemplates'
+import { TOPICS, GRADE_LEVELS } from '../data/mathTemplates'
 import './CampScreen.css'
 
 export default function CampScreen() {
@@ -35,16 +35,13 @@ export default function CampScreen() {
       </header>
 
       <div className="camp-grid">
-        <button className="camp-action hunt-action" onClick={() => state.goTo('expedition')}>
-          <span className="action-icon">🏹</span>
-          <span className="action-label">Go Hunting</span>
-          <span className="action-desc">Head to The Meadow</span>
-          {state.inventory.arrow > 0 && (
-            <span className="action-note">{state.inventory.arrow} arrows ready</span>
-          )}
-          {state.inventory.arrow === 0 && (
-            <span className="action-warn">No arrows! Craft some first.</span>
-          )}
+        <button className="camp-action hunt-action" onClick={() => state.goTo('overworld')}>
+          <span className="action-icon">🌲</span>
+          <span className="action-label">Return to Wilderness</span>
+          <span className="action-desc">Explore, hunt, fish, and forage</span>
+          <span className="action-note">
+            🏹 {state.inventory.arrow} arrows · 🔱 {state.inventory.spear || 0} spears
+          </span>
         </button>
 
         <button className="camp-action craft-action" onClick={() => state.goTo('crafting')}>
@@ -54,18 +51,46 @@ export default function CampScreen() {
         </button>
 
         <div className="camp-panel topic-panel" style={{ gridColumn: '1 / -1' }}>
-          <h3>Math Focus</h3>
-          <p className="topic-desc">Pick a topic to practice, or hunt with all topics mixed in.</p>
-          <div className="topic-grid">
-            {Object.entries(TOPICS).map(([key, label]) => (
+          <div className="grade-section">
+            <h3>Grade Level</h3>
+            <div className="grade-grid">
+              {Object.entries(GRADE_LEVELS).map(([grade, info]) => (
+                <button
+                  key={grade}
+                  className={`grade-btn ${state.gradeLevel === Number(grade) ? 'active' : ''}`}
+                  onClick={() => state.setGradeLevel(Number(grade))}
+                >
+                  {info.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="timer-toggle-section">
+            <label className="timer-toggle">
+              <span className="toggle-label">Question Timer</span>
               <button
-                key={key}
-                className={`topic-btn ${state.mathTopic === key ? 'active' : ''}`}
-                onClick={() => state.setTopic(key)}
+                className={`toggle-switch ${state.timerEnabled ? 'on' : 'off'}`}
+                onClick={() => state.toggleTimer()}
               >
-                {label}
+                <span className="toggle-knob" />
               </button>
-            ))}
+              <span className="toggle-status">{state.timerEnabled ? 'ON' : 'OFF'}</span>
+            </label>
+          </div>
+          <div className="topic-section">
+            <h3>Math Focus</h3>
+            <p className="topic-desc">Pick a topic to practice, or hunt with all topics mixed in.</p>
+            <div className="topic-grid">
+              {Object.entries(TOPICS).map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`topic-btn ${state.mathTopic === key ? 'active' : ''}`}
+                  onClick={() => state.setTopic(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -129,6 +154,14 @@ export default function CampScreen() {
                 ? Math.round((state.stats.totalCorrect / state.stats.totalAttempted) * 100)
                 : 0}%
             </span>
+          </div>
+          <div className="stat-row">
+            <span>Hunter Level</span>
+            <span>{state.level || 1}</span>
+          </div>
+          <div className="stat-row">
+            <span>Grade Level</span>
+            <span>{GRADE_LEVELS[state.gradeLevel]?.label || `Grade ${state.gradeLevel}`}</span>
           </div>
           <div className="stat-row">
             <span>Math Difficulty</span>

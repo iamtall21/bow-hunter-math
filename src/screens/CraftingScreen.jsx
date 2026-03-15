@@ -9,7 +9,8 @@ export default function CraftingScreen() {
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [craftQty, setCraftQty] = useState(1)
 
-  const recipes = Object.entries(RECIPES).filter(([, r]) => r.unlocked)
+  const unlockedRecipes = state.unlockedRecipes || Object.keys(RECIPES)
+  const recipes = Object.entries(RECIPES).filter(([id]) => unlockedRecipes.includes(id))
 
   const handleCraft = (recipeId) => {
     const success = state.craft(recipeId)

@@ -111,6 +111,14 @@
   margin-top: 0.5rem;
 }
 
+.forage-action {
+  border-color: rgba(139, 196, 139, 0.4);
+}
+
+.forage-action:hover {
+  border-color: #8bc48b;
+}
+
 .camp-panel {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(232, 201, 122, 0.2);
@@ -201,6 +209,108 @@
 .stat-row span:last-child {
   color: #e8c97a;
   font-weight: 600;
+}
+
+/* Timer toggle */
+.timer-toggle-section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(232, 201, 122, 0.15);
+}
+
+.timer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e8c97a;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.toggle-switch.on {
+  background: #7a9e5a;
+}
+
+.toggle-switch.off {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+}
+
+.toggle-switch.on .toggle-knob {
+  left: 25px;
+}
+
+.toggle-switch.off .toggle-knob {
+  left: 3px;
+}
+
+.toggle-status {
+  font-size: 0.8rem;
+  color: #a89279;
+  font-weight: 600;
+  min-width: 2rem;
+}
+
+.grade-section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(232, 201, 122, 0.15);
+}
+
+.grade-grid {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.grade-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(232, 201, 122, 0.3);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  color: #c4a882;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.grade-btn:hover {
+  border-color: #e8c97a;
+  color: #e8c97a;
+}
+
+.grade-btn.active {
+  background: #7a9e5a;
+  color: #fff;
+  border-color: #7a9e5a;
+  font-weight: 600;
+}
+
+.topic-section h3 {
+  margin-top: 0;
 }
 
 .topic-desc {

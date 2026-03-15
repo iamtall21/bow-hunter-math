@@ -1,8 +1,8 @@
 import { useGameStore } from './store/gameStore'
 import TitleScreen from './screens/TitleScreen'
 import CampScreen from './screens/CampScreen'
-import ExpeditionScreen from './screens/ExpeditionScreen'
 import CraftingScreen from './screens/CraftingScreen'
+import OverworldCanvas from './engine/OverworldCanvas'
 import './App.css'
 
 function App() {
@@ -11,10 +11,10 @@ function App() {
   switch (screen) {
     case 'title':
       return <TitleScreen />
+    case 'overworld':
+      return <OverworldCanvas />
     case 'camp':
       return <CampScreen />
-    case 'expedition':
-      return <ExpeditionScreen />
     case 'crafting':
       return <CraftingScreen />
     default:

@@ -1,0 +1,881 @@
+.fishing-screen {
+  min-height: 100vh;
+  background: #0a1e2e;
+  color: #d3e6f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.fishing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.fishing-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.fishing-info .area-name { color: #7ac4e8; font-weight: 600; }
+.spear-count { color: #6bc4c4; }
+
+.fishing-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- UNDERWATER SCENE ---- */
+.water-ground {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 60vh;
+  background: linear-gradient(
+    180deg,
+    #1a6a8a 0%,
+    #145a7a 10%,
+    #0e4a6a 20%,
+    #0a3d5c 35%,
+    #08334e 50%,
+    #062a40 65%,
+    #042030 80%,
+    #031828 100%
+  );
+  overflow: hidden;
+  border-bottom: 4px solid #031828;
+}
+
+/* Water surface ripples at top */
+.water-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12%;
+  background:
+    linear-gradient(180deg,
+      rgba(100, 200, 255, 0.3) 0%,
+      rgba(60, 160, 220, 0.15) 50%,
+      transparent 100%
+    );
+  pointer-events: none;
+  z-index: 8;
+  animation: surface-ripple 4s ease-in-out infinite;
+}
+
+@keyframes surface-ripple {
+  0%, 100% { transform: scaleY(1); opacity: 0.8; }
+  50% { transform: scaleY(1.15); opacity: 1; }
+}
+
+/* Light rays from surface */
+.water-rays {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    linear-gradient(165deg, rgba(100, 200, 255, 0.08) 0%, transparent 40%),
+    linear-gradient(175deg, rgba(80, 180, 240, 0.06) 5%, transparent 35%),
+    linear-gradient(155deg, rgba(100, 200, 255, 0.05) 10%, transparent 45%);
+  animation: ray-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes ray-shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Riverbed rocks at bottom */
+.riverbed {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 15%;
+  background:
+    radial-gradient(ellipse 30px 18px at 10% 80%, #3a4a3a 60%, transparent 61%),
+    radial-gradient(ellipse 22px 14px at 25% 90%, #4a5a4a 60%, transparent 61%),
+    radial-gradient(ellipse 35px 20px at 45% 85%, #3a4a3a 60%, transparent 61%),
+    radial-gradient(ellipse 18px 12px at 60% 95%, #4a5a4a 60%, transparent 61%),
+    radial-gradient(ellipse 28px 16px at 75% 82%, #3a4a3a 60%, transparent 61%),
+    radial-gradient(ellipse 24px 15px at 90% 88%, #4a5a4a 60%, transparent 61%),
+    linear-gradient(180deg, transparent 0%, rgba(40, 60, 40, 0.4) 40%, rgba(50, 70, 50, 0.7) 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Bubbles */
+.water-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.water-bubbles::before,
+.water-bubbles::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(150, 220, 255, 0.15);
+  animation: bubble-rise 5s ease-in infinite;
+}
+
+.water-bubbles::before {
+  width: 8px;
+  height: 8px;
+  left: 30%;
+  bottom: 10%;
+  animation-delay: 0s;
+}
+
+.water-bubbles::after {
+  width: 5px;
+  height: 5px;
+  left: 65%;
+  bottom: 15%;
+  animation-delay: 2.5s;
+}
+
+@keyframes bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.3; }
+  80% { opacity: 0.15; }
+  100% { transform: translateY(-300px) scale(0.5); opacity: 0; }
+}
+
+.wading-ground {
+  opacity: 0.7;
+  filter: blur(1px);
+}
+
+/* ---- FISH TARGET ---- */
+.fish-target {
+  position: absolute;
+  font-size: 2.5rem;
+  transform: translate(-50%, -50%);
+  transition: none;
+  z-index: 5;
+  filter: drop-shadow(0 2px 6px rgba(0, 100, 200, 0.3));
+}
+
+.fish-target.left {
+  transform: translate(-50%, -50%) scaleX(-1);
+}
+
+.fish-ripple {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 4px;
+  background: radial-gradient(ellipse at center, rgba(100, 200, 255, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.fish-hit {
+  transition: all 0.5s ease-out;
+}
+
+.fish-flee {
+  animation: fish-dart 0.6s ease-out forwards;
+}
+
+@keyframes fish-dart {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) translateX(250px) scale(0.4); }
+}
+
+/* ---- UNDERWATER CROSSHAIR (blue tinted) ---- */
+.water-crosshair .scope-ring {
+  border-color: rgba(100, 200, 255, 0.45);
+}
+
+.water-crosshair .crosshair-seg {
+  background: rgba(100, 200, 255, 0.85);
+}
+
+.water-crosshair .crosshair-dot {
+  background: rgba(100, 200, 255, 0.95);
+}
+
+/* ---- SPEAR WEAPON (right side, FPS style) ---- */
+.spear-weapon {
+  position: absolute;
+  bottom: -10px;
+  right: 8%;
+  width: 100px;
+  height: 350px;
+  pointer-events: none;
+  z-index: 15;
+  transform-origin: bottom right;
+}
+
+.spear-weapon.spear-ready {
+  animation: spear-raise 0.5s ease-out forwards;
+}
+
+.spear-weapon.spear-thrown {
+  animation: spear-throw 0.3s ease-out forwards;
+}
+
+@keyframes spear-raise {
+  0% { transform: translateY(100px) rotate(5deg); }
+  60% { transform: translateY(-5px) rotate(-1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes spear-throw {
+  0% { transform: rotate(0deg) translateY(0); }
+  40% { transform: rotate(-15deg) translateY(-40px); }
+  100% { transform: rotate(-25deg) translateY(-80px) scale(0.7); opacity: 0.6; }
+}
+
+.spear-shaft {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 280px;
+  background: linear-gradient(90deg, #5a4020, #7a5a30, #6a4a28);
+  border-radius: 4px;
+}
+
+.spear-point {
+  position: absolute;
+  bottom: 310px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 30px solid #8a8a9a;
+}
+
+.spear-point::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: -5px;
+  width: 10px;
+  height: 12px;
+  background: linear-gradient(90deg, #5a4020, #7a5a30);
+  border-radius: 2px;
+}
+
+.spear-hand {
+  position: absolute;
+  bottom: 40px;
+  left: calc(50% + 4px);
+  width: 28px;
+  height: 32px;
+  background: linear-gradient(135deg, #c4956b, #a87850, #c4956b);
+  border-radius: 4px 8px 6px 4px;
+  transform: rotate(-5deg);
+}
+
+.spear-hand::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: -4px;
+  width: 8px;
+  height: 20px;
+  background: linear-gradient(90deg, #b88860, #a87850);
+  border-radius: 4px;
+  transform: rotate(8deg);
+}
+
+/* ---- UNDERWATER VIGNETTE ---- */
+.water-vignette {
+  background: radial-gradient(
+    ellipse 70% 65% at 50% 50%,
+    transparent 50%,
+    rgba(0, 20, 40, 0.5) 100%
+  ) !important;
+}
+
+/* ---- WATER MATH OVERLAY ---- */
+.water-math-overlay {
+  background: rgba(0, 15, 30, 0.88);
+}
+
+/* ---- WATER HUD ---- */
+.water-hud {
+  background: rgba(0, 20, 40, 0.6);
+}
+
+/* ---- WADING SCENE ---- */
+.phase-wading {
+  text-align: center;
+  padding: 1rem;
+}
+
+.fish-btn {
+  background: #2a6a8a !important;
+}
+
+.fish-btn:hover {
+  background: #3a7a9a !important;
+}
+
+/* ---- WATER FORAGE ---- */
+.water-forage {
+  border-color: rgba(100, 180, 255, 0.3);
+}
+
+.water-forage .forage-item {
+  background: rgba(100, 180, 255, 0.1);
+}
+
+.water-forage .forage-item-name {
+  color: #6bc4c4;
+}
+
+/* ---- Reuse expedition styles for shared components ---- */
+.fishing-screen .back-btn {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  color: #7ab4d4;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.fishing-screen .back-btn:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.fishing-screen .scene-text {
+  font-size: 1.15rem;
+  color: #8ab4c4;
+  font-style: italic;
+  margin: 1.5rem 0;
+  line-height: 1.6;
+}
+
+.fishing-screen .scout-btn {
+  background: #3a6a7a;
+  color: #d3e6f5;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fishing-screen .scout-btn:hover {
+  background: #4a7a8a;
+}
+
+.fishing-screen .phase-math {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.fishing-screen .phase-math .water-ground {
+  flex: 1;
+  max-height: none;
+  aspect-ratio: auto;
+  filter: brightness(0.6);
+}
+
+.fishing-screen .math-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  z-index: 10;
+}
+
+.fishing-screen .timer-bar-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  height: 10px;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+}
+
+.fishing-screen .timer-bar {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.1s linear;
+}
+
+.fishing-screen .timer-text {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #7ac4e8;
+}
+
+.fishing-screen .challenge-box {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.fishing-screen .challenge-label {
+  font-size: 0.85rem;
+  color: #7ac4e8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+.fishing-screen .challenge-question {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #d3e6f5;
+  margin-bottom: 0.75rem;
+}
+
+.fishing-screen .answer-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fishing-screen .answer-input {
+  flex: 1;
+  padding: 0.7rem;
+  border: 2px solid rgba(100, 180, 255, 0.4);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #d3e6f5;
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.fishing-screen .answer-input:focus {
+  outline: none;
+  border-color: #7ac4e8;
+}
+
+.fishing-screen .answer-input::-webkit-inner-spin-button,
+.fishing-screen .answer-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.fishing-screen .answer-input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.fishing-screen .submit-answer-btn {
+  background: #2a7a9a;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.fishing-screen .submit-answer-btn:hover:not(:disabled) {
+  background: #3a8aaa;
+}
+
+.fishing-screen .submit-answer-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fishing-screen .hint-btn {
+  display: block;
+  margin: 0.5rem auto 0;
+  background: none;
+  border: none;
+  color: #6a9aaa;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.fishing-screen .hint-text {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  color: #7ab4d4;
+  font-style: italic;
+  text-align: center;
+}
+
+.fishing-screen .phase-aiming {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fishing-screen .aiming-ground {
+  cursor: none;
+  flex: 1;
+  max-height: none;
+  aspect-ratio: auto;
+}
+
+.fishing-screen .aim-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  z-index: 20;
+  position: relative;
+}
+
+.fishing-screen .steadiness-label {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.fishing-screen .aim-instruction {
+  color: #7ab4d4;
+  font-size: 0.9rem;
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Crosshair shared styles */
+.fishing-screen .crosshair {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.fishing-screen .scope-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(100, 200, 255, 0.45);
+  border-radius: 50%;
+}
+
+.fishing-screen .crosshair-seg {
+  position: absolute;
+  background: rgba(100, 200, 255, 0.85);
+}
+
+.fishing-screen .seg-top {
+  left: 50%; width: 2px; top: 0;
+  height: calc(50% - var(--gap));
+  transform: translateX(-50%);
+}
+.fishing-screen .seg-bottom {
+  left: 50%; width: 2px; bottom: 0;
+  height: calc(50% - var(--gap));
+  transform: translateX(-50%);
+}
+.fishing-screen .seg-left {
+  top: 50%; height: 2px; left: 0;
+  width: calc(50% - var(--gap));
+  transform: translateY(-50%);
+}
+.fishing-screen .seg-right {
+  top: 50%; height: 2px; right: 0;
+  width: calc(50% - var(--gap));
+  transform: translateY(-50%);
+}
+.fishing-screen .crosshair-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 4px; height: 4px;
+  background: rgba(100, 200, 255, 0.95);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.fishing-screen .shot-impact {
+  position: absolute;
+  font-size: 3rem;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  animation: impact-pop 0.3s ease-out;
+}
+
+@keyframes impact-pop {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.fishing-screen .shot-fired {
+  cursor: default !important;
+}
+
+.fishing-screen .vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 18;
+}
+
+/* Result phase */
+.fishing-screen .phase-result {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.fishing-screen .result-icon {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+}
+
+.fishing-screen .result-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.fishing-screen .result-perfect .result-title { color: #7ac4e8; }
+.fishing-screen .result-hit .result-title { color: #6bc4c4; }
+.fishing-screen .result-graze .result-title { color: #7ab4d4; }
+.fishing-screen .result-miss .result-title { color: #e87a7a; }
+
+.fishing-screen .result-desc {
+  font-size: 1.05rem;
+  color: #b4c4d0;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.fishing-screen .question-review {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(100, 180, 255, 0.2);
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: left;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.fishing-screen .review-label {
+  font-size: 0.8rem;
+  color: #6a9aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+.fishing-screen .review-question {
+  font-size: 1.05rem;
+  color: #d3e6f5;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.fishing-screen .review-answer {
+  font-size: 1.1rem;
+  color: #7ac4e8;
+  margin-bottom: 0.35rem;
+}
+
+.fishing-screen .review-hint {
+  font-size: 0.9rem;
+  color: #6bc4c4;
+  font-style: italic;
+}
+
+.fishing-screen .accuracy-feedback {
+  font-size: 0.95rem;
+  color: #6a9aaa;
+  font-style: italic;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
+.fishing-screen .quest-complete-banner {
+  background: rgba(100, 180, 255, 0.15);
+  border: 1px solid #7ac4e8;
+  padding: 0.75rem;
+  border-radius: 8px;
+  color: #7ac4e8;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.fishing-screen .next-btn {
+  background: #2a6a8a;
+  color: #d3e6f5;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fishing-screen .next-btn:hover {
+  background: #3a7a9a;
+}
+
+/* Foraging */
+.fishing-screen .phase-forage {
+  padding: 1.5rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.fishing-screen .forage-scene {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.fishing-screen .forage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  color: #8ab4c4;
+  margin-bottom: 1rem;
+}
+
+.fishing-screen .forage-icon {
+  font-size: 1.8rem;
+}
+
+.fishing-screen .forage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.fishing-screen .forage-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+}
+
+.fishing-screen .forage-item-icon {
+  font-size: 1.4rem;
+}
+
+.fishing-screen .forage-item-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.fishing-screen .forage-item-qty {
+  font-size: 0.9rem;
+  color: #7ab4d4;
+}
+
+.fishing-screen .forage-challenge {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+
+.fishing-screen .forage-prompt {
+  font-size: 0.9rem;
+  color: #7ac4e8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.fishing-screen .forage-question {
+  font-size: 1.05rem;
+  color: #d3e6f5;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.fishing-screen .skip-forage-btn {
+  display: block;
+  margin: 0.75rem auto 0;
+  background: none;
+  border: none;
+  color: #5a7a8a;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.fishing-screen .skip-forage-btn:hover {
+  color: #6a9aaa;
+}
+
+.fishing-screen .forage-result {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.fishing-screen .forage-result-text {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.fishing-screen .forage-success {
+  color: #6bc4c4;
+  font-weight: 600;
+}
+
+.fishing-screen .forage-basic {
+  color: #7ab4d4;
+}
+
+.fishing-screen .forage-correct {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #6a9aaa;
+}
+
+.fishing-screen .forage-hint {
+  font-size: 0.85rem;
+  color: #6bc4c4;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.fishing-screen .phase-no-arrows {
+  text-align: center;
+  padding: 1rem;
+}
+
+@media (max-width: 600px) {
+  .fishing-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .fishing-info {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .spear-weapon {
+    width: 70px;
+    height: 240px;
+  }
+  .fishing-screen .crosshair {
+    width: 60px;
+    height: 60px;
+  }
+}

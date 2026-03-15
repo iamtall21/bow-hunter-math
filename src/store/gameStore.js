@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { STARTER_INVENTORY, RECIPES, ANIMALS, AREAS, RANKS, QUESTS } from '../data/gameData'
+import { STARTER_INVENTORY, RECIPES, ANIMALS, AREAS, RANKS, QUESTS, LEVELS } from '../data/gameData'
+import { GRADE_LEVELS } from '../data/mathTemplates'
 
 const SAVE_KEY = 'bow_hunter_save'
 
@@ -16,14 +17,20 @@ function getDefaultState() {
     playerName: '',
     honor: 0,
     rankIndex: 0,
-    difficultyTier: 1,
+    gradeLevel: 5,
+    difficultyTier: 3,
     difficulty: 'normal',
     mathTopic: 'all',
+    timerEnabled: true,
     inventory: { ...STARTER_INVENTORY },
     craftedItems: {},
+    level: 1,
     unlockedAreas: ['meadow'],
+    unlockedRecipes: ['basic_arrow', 'snare'],
     completedQuests: [],
     perfectStreak: 0,
+    playerWorldX: null,
+    playerWorldY: null,
     stats: {
       totalHunts: 0,
       perfectShots: 0,
@@ -31,6 +38,8 @@ function getDefaultState() {
       totalAttempted: 0,
       animalsHarvested: {},
       totalCrafted: {},
+      totalFishCaught: 0,
+      fishHarvested: {},
     },
     recentAccuracy: [],
   }
@@ -45,9 +54,9 @@ export const useGameStore = create((set, get) => ({
   initGame(name) {
     const save = loadSave()
     if (save && save.playerName) {
-      set({ ...save, screen: 'camp', initialized: true })
+      set({ ...getDefaultState(), ...save, screen: 'overworld', initialized: true })
     } else {
-      set({ ...getDefaultState(), playerName: name, screen: 'camp', initialized: true })
+      set({ ...getDefaultState(), playerName: name, screen: 'overworld', initialized: true })
       get().saveGame()
     }
   },
@@ -55,7 +64,7 @@ export const useGameStore = create((set, get) => ({
   loadExistingSave() {
     const save = loadSave()
     if (save && save.playerName) {
-      set({ ...save, screen: 'camp', initialized: true })
+      set({ ...getDefaultState(), ...save, screen: 'overworld', initialized: true })
       return true
     }
     return false
@@ -72,14 +81,20 @@ export const useGameStore = create((set, get) => ({
       playerName: state.playerName,
       honor: state.honor,
       rankIndex: state.rankIndex,
+      gradeLevel: state.gradeLevel,
       difficultyTier: state.difficultyTier,
       difficulty: state.difficulty,
       mathTopic: state.mathTopic,
+      timerEnabled: state.timerEnabled,
+      level: state.level,
       inventory: state.inventory,
       craftedItems: state.craftedItems,
       unlockedAreas: state.unlockedAreas,
+      unlockedRecipes: state.unlockedRecipes,
       completedQuests: state.completedQuests,
       perfectStreak: state.perfectStreak,
+      playerWorldX: state.playerWorldX,
+      playerWorldY: state.playerWorldY,
       stats: state.stats,
       recentAccuracy: state.recentAccuracy,
     }
@@ -98,6 +113,17 @@ export const useGameStore = create((set, get) => ({
 
   setTopic(topic) {
     set({ mathTopic: topic })
+    get().saveGame()
+  },
+
+  setGradeLevel(grade) {
+    const baseTier = GRADE_LEVELS[grade]?.baseTier || 1
+    set({ gradeLevel: grade, difficultyTier: baseTier })
+    get().saveGame()
+  },
+
+  toggleTimer() {
+    set({ timerEnabled: !get().timerEnabled })
     get().saveGame()
   },
 
@@ -173,12 +199,105 @@ export const useGameStore = create((set, get) => ({
       }
     }
 
-    // Adjust difficulty tier based on accuracy
+    // Adjust difficulty tier based on accuracy (within grade range)
+    const baseTier = GRADE_LEVELS[state.gradeLevel]?.baseTier || 1
+    const minTier = Math.max(1, baseTier - 1)
+    const maxTier = Math.min(3, baseTier + 1)
     let newTier = state.difficultyTier
     if (newAccuracy.length >= 5) {
       const avgAccuracy = newAccuracy.reduce((a, b) => a + b, 0) / newAccuracy.length
-      if (avgAccuracy > 0.8 && newTier < 3) newTier = Math.min(newTier + 1, 3)
-      else if (avgAccuracy < 0.4 && newTier > 1) newTier = Math.max(newTier - 1, 1)
+      if (avgAccuracy > 0.8 && newTier < maxTier) newTier = Math.min(newTier + 1, maxTier)
+      else if (avgAccuracy < 0.4 && newTier > minTier) newTier = Math.max(newTier - 1, minTier)
+    }
+
+    set({
+      honor: newHonor,
+      rankIndex: newRankIndex,
+      inventory: newInventory,
+      perfectStreak,
+      stats: newStats,
+      recentAccuracy: newAccuracy,
+      difficultyTier: newTier,
+    })
+    get().saveGame()
+  },
+
+  // ---- FISHING RESULTS ----
+  recordFishing(fishId, result) {
+    const state = get()
+    const fish = ANIMALS[fishId]
+    if (!fish) return
+
+    let honorGain = 0
+    let perfectStreak = state.perfectStreak
+    const newInventory = { ...state.inventory }
+    const newStats = { ...state.stats }
+    const newAccuracy = [...state.recentAccuracy]
+
+    newStats.totalAttempted++
+
+    if (result === 'perfect') {
+      honorGain = fish.honor * 3
+      newStats.totalCorrect++
+      newStats.perfectShots++
+      newStats.totalFishCaught++
+      perfectStreak++
+      newAccuracy.push(1)
+      Object.entries(fish.drops).forEach(([mat, qty]) => {
+        newInventory[mat] = (newInventory[mat] || 0) + qty + 1
+      })
+      // Bonus river materials
+      const forageOptions = AREAS.river?.materialsFound || []
+      if (forageOptions.length > 0) {
+        const bonus = forageOptions[Math.floor(Math.random() * forageOptions.length)]
+        newInventory[bonus] = (newInventory[bonus] || 0) + 2
+      }
+    } else if (result === 'hit') {
+      honorGain = fish.honor
+      newStats.totalCorrect++
+      newStats.totalFishCaught++
+      perfectStreak++
+      newAccuracy.push(1)
+      Object.entries(fish.drops).forEach(([mat, qty]) => {
+        newInventory[mat] = (newInventory[mat] || 0) + qty
+      })
+    } else if (result === 'spooked') {
+      honorGain = 0
+      newStats.totalCorrect++
+      perfectStreak = 0
+      newAccuracy.push(0.5)
+    } else {
+      // miss
+      perfectStreak = 0
+      newAccuracy.push(0)
+      if (newInventory.spear > 0) newInventory.spear--
+    }
+
+    // Track fish harvested
+    if (result === 'perfect' || result === 'hit') {
+      newStats.fishHarvested = { ...newStats.fishHarvested }
+      newStats.fishHarvested[fishId] = (newStats.fishHarvested[fishId] || 0) + 1
+    }
+
+    while (newAccuracy.length > 20) newAccuracy.shift()
+
+    const newHonor = state.honor + honorGain
+    let newRankIndex = state.rankIndex
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+      if (newHonor >= RANKS[i].honorRequired) {
+        newRankIndex = i
+        break
+      }
+    }
+
+    const baseTier = GRADE_LEVELS[state.gradeLevel]?.baseTier || 1
+    const minTier = Math.max(1, baseTier - 1)
+    const maxTier = Math.min(3, baseTier + 1)
+    let newTier = state.difficultyTier
+    if (newAccuracy.length >= 5) {
+      const avgAccuracy = newAccuracy.reduce((a, b) => a + b, 0) / newAccuracy.length
+      if (avgAccuracy > 0.8 && newTier < maxTier) newTier = Math.min(newTier + 1, maxTier)
+      else if (avgAccuracy < 0.4 && newTier > minTier) newTier = Math.max(newTier - 1, minTier)
     }
 
     set({
@@ -229,6 +348,58 @@ export const useGameStore = create((set, get) => ({
     return true
   },
 
+  // ---- FORAGING (camp) ----
+  forage(materials) {
+    const newInventory = { ...get().inventory }
+    Object.entries(materials).forEach(([mat, qty]) => {
+      newInventory[mat] = (newInventory[mat] || 0) + qty
+    })
+    set({ inventory: newInventory })
+    get().saveGame()
+  },
+
+  // ---- LEVEL PROGRESSION ----
+  checkLevelUp() {
+    const state = get()
+    const currentLevel = state.level || 1
+    const correctCount = state.stats.totalCorrect
+
+    for (let i = LEVELS.length - 1; i >= 0; i--) {
+      if (correctCount >= LEVELS[i].correctNeeded && LEVELS[i].level > currentLevel) {
+        const newLevel = LEVELS[i].level
+        const newUnlockedAreas = [...state.unlockedAreas]
+        const newUnlockedRecipes = [...(state.unlockedRecipes || ['basic_arrow', 'snare'])]
+
+        // Apply all unlocks from currentLevel+1 to newLevel
+        for (const lvl of LEVELS) {
+          if (lvl.level > currentLevel && lvl.level <= newLevel) {
+            for (const unlock of lvl.unlocks) {
+              if (unlock.type === 'area' && !newUnlockedAreas.includes(unlock.id)) {
+                newUnlockedAreas.push(unlock.id)
+              }
+              if (unlock.type === 'recipe' && !newUnlockedRecipes.includes(unlock.id)) {
+                newUnlockedRecipes.push(unlock.id)
+              }
+            }
+          }
+        }
+
+        set({
+          level: newLevel,
+          unlockedAreas: newUnlockedAreas,
+          unlockedRecipes: newUnlockedRecipes,
+        })
+        get().saveGame()
+        return {
+          leveledUp: true,
+          newLevel,
+          unlocks: LEVELS.find(l => l.level === newLevel)?.unlocks || [],
+        }
+      }
+    }
+    return { leveledUp: false }
+  },
+
   // ---- QUEST CHECKING ----
   getActiveQuests() {
     const state = get()
@@ -259,6 +430,8 @@ export const useGameStore = create((set, get) => ({
         done = (state.stats.totalCrafted?.[g.item] || 0) >= g.count
       } else if (g.type === 'perfect_streak') {
         done = state.perfectStreak >= g.count
+      } else if (g.type === 'fish_total') {
+        done = (state.stats.totalFishCaught || 0) >= g.count
       }
 
       if (done) {
